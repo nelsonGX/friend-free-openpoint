@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { getSession } from "@/lib/session";
 
 export const runtime = "edge";
@@ -32,12 +31,11 @@ export default async function Home({
       <div className="flex flex-col gap-5">
         <div className="animate-fade-up relative w-fit">
           <div className="absolute inset-0 -z-10 rounded-3xl bg-amber-400/25 blur-2xl" />
-          <Image
+          <img
             src="/assets/openpoint_free.webp"
             alt="OpenPoint 代轉"
             width={72}
             height={72}
-            priority
             className="h-16 w-16 rounded-2xl object-cover shadow-[0_10px_30px_-12px_rgba(245,158,11,0.8)] ring-1 ring-white/10 sm:h-[72px] sm:w-[72px]"
           />
         </div>

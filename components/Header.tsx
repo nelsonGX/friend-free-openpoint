@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { getSession, sessionIsAdmin } from "@/lib/session";
 
 export default async function Header() {
@@ -14,12 +13,11 @@ export default async function Header() {
           href="/"
           className="group flex items-center gap-2.5 font-semibold tracking-tight"
         >
-          <Image
+          <img
             src="/assets/openpoint_free.webp"
             alt="OpenPoint 代轉"
             width={32}
             height={32}
-            priority
             className="h-8 w-8 rounded-xl object-cover shadow-[0_4px_14px_-4px_rgba(245,158,11,0.7)] ring-1 ring-white/10 transition-transform group-hover:scale-105"
           />
           <span className="transition-colors group-hover:text-amber-200">OpenPoint 代轉</span>
