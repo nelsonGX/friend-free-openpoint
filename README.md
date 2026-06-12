@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OpenPoint 代轉 (Free OpenPoint)
 
-## Getting Started
+A small tool for friends to request **OpenPoint** top-ups. A friend logs in with
+Discord (gated to our group via **Friend Group Auth**), enters the receiving phone
+number, picks an amount, and pays with group credits. The admin then transfers the
+OpenPoint to that phone number in the OpenPoint app and marks the request approved.
+If a request is rejected, the friend's credits are refunded automatically.
 
-First, run the development server:
+**Flow:** 登入 (Discord) → 申請 (手機 + 點數) → 付款 (點數) → 待核准 → 管理員轉帳並核准 → 完成
+(1 credit = 1 TWD = 1 OpenPoint, fixed.)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Auth & payments — Friend Group Auth
+
+This app integrates [Friend Group Auth](https://group.nelsongx.com) (Discord-gated
+OAuth 2.0 + PKCE + a shared credit system). Access requires `allowed === true` from
+userinfo, so only members of our Discord group can use it. The OAuth app is already
+registered (see **Provider apps** in the dashboard).
+
+### Routes
+
+| Path                  | What it does                                                              |
+| --------------------- | ------------------------------------------------------------------------- |
+| `/`                   | Landing page; Discord login                                               |
+| `/apply`              | Apply form (phone + amount), creates a pay intent and redirects to pay    |
+| `/status`             | The signed-in user's own requests and their status                        |
+| `/admin`              | Admin-only dashboard: approve (sent) or reject (refund) paid requests     |
+| `/api/auth/login`     | Begins OAuth (PKCE + state)                                               |
+| `/api/auth/callback`  | Exchanges code, checks `allowed`, opens a session                         |
+| `/api/auth/logout`    | Clears the session                                                        |
+| `/api/requests`       | Creates a request + pay intent (server-side)                              |
+| `/pay/return`         | Payment return URL: verifies the payment server-side, flips state         |
+| `/pay/result`         | Friendly result page after a payment                                      |
+| `/api/admin/approve`  | Marks a paid request completed                                            |
+| `/api/admin/reject`   | Refunds the friend (reverse pay) and marks the request rejected           |
+
+Requests are stored in Friend Group Auth's hosted JSON store (app scope) under the
+`req:` key prefix — this app has no database of its own.
+
+## Environment
+
+Secrets live in `.env.local` (git-ignored). The Friend Group Auth keys were written
+by the integration skill; you must set the rest:
+
+```
+AUTH_BASE_URL=https://group.nelsongx.com
+AUTH_CLIENT_ID=fgc_...            # written by the skill
+AUTH_CLIENT_SECRET=...            # written by the skill — server-side only, never expose
+AUTH_REDIRECT_URI=http://localhost:3000/api/auth/callback
+SESSION_SECRET=...                # random; signs the session cookie
+ADMIN_DISCORD_IDS=                # comma-separated Discord user IDs allowed into /admin
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> **Set `ADMIN_DISCORD_IDS`** to your own Discord user ID (right-click your name in
+> Discord → Copy User ID, with Developer Mode on). Without it, `/admin` is reachable
+> by nobody. Multiple admins: `id1,id2`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The app derives the OAuth callback and payment-return URLs from the request origin,
+so the same build works on both dev and prod **as long as the origin matches a
+registered redirect URI**.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Registered redirect URIs
 
-## Learn More
+- `http://localhost:3000/api/auth/callback` and `http://localhost:3000/pay/return`
+- `https://get-openpoint.nelsongx.com/api/auth/callback` and `https://get-openpoint.nelsongx.com/pay/return`
 
-To learn more about Next.js, take a look at the following resources:
+> **Run dev on port 3000.** OAuth only works on a registered origin; a different
+> port (e.g. 3001) will be rejected with a `redirect_uri` mismatch.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Funding refunds / payouts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Rejecting a paid request refunds the friend via Friend Group Auth **reverse pay**,
+which draws from the app's balance. Keep the app balance funded (dashboard →
+**Manage → Funding**, or route payment income into app balance); a low balance
+returns `402 insufficient_funds` and the rejection is aborted with a message.
 
-## Deploy on Vercel
+## Develop
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run dev      # http://localhost:3000
+npm run build
+npm run lint
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Production env vars
+
+Set the same five env vars on your host (e.g. Vercel project settings). Use a fresh
+`SESSION_SECRET`, the production `AUTH_REDIRECT_URI`
+(`https://get-openpoint.nelsongx.com/api/auth/callback`), and your real
+`ADMIN_DISCORD_IDS`. The prod redirect URIs above are already registered.
