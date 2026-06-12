@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getSession } from "@/lib/session";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 const ERROR_MESSAGES: Record<string, string> = {

@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSession, sessionIsAdmin } from "@/lib/session";
 import { getRequest, saveRequest } from "@/lib/store";
 
+export const runtime = "edge";
+
 // Admin marks a paid request as completed (OpenPoint has been sent to the phone).
 export async function POST(request: NextRequest) {
   const origin = request.nextUrl.origin;

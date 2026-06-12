@@ -3,6 +3,7 @@ import { getSession, sessionIsAdmin } from "@/lib/session";
 import { listAllRequests, type OpenPointRequest } from "@/lib/store";
 import { STATUS_LABEL, STATUS_CLASS, formatDateTime } from "@/lib/status";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 function RequestRow({ r, actionable }: { r: OpenPointRequest; actionable: boolean }) {

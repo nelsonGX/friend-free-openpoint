@@ -4,6 +4,8 @@ import { getSession } from "@/lib/session";
 import { listRequestsForUser } from "@/lib/store";
 import { STATUS_LABEL, STATUS_CLASS, formatDateTime } from "@/lib/status";
 
+export const runtime = "edge";
+
 export const dynamic = "force-dynamic";
 
 export default async function StatusPage() {

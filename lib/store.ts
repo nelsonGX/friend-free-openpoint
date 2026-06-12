@@ -1,5 +1,4 @@
 // OpenPoint requests, persisted in the Friend Group Auth hosted JSON store.
-import crypto from "node:crypto";
 import { dataGet, dataSet, dataList } from "@/lib/fga";
 
 export type RequestStatus =
@@ -34,6 +33,7 @@ const KEY_PREFIX = "req:";
 const keyFor = (id: string) => `${KEY_PREFIX}${id}`;
 
 export function newId(): string {
+  // Web Crypto global — available in the Edge Runtime (no node:crypto).
   return crypto.randomUUID();
 }
 

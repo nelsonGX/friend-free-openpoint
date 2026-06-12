@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { getRequest } from "@/lib/store";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 type Outcome = { title: string; message: string; tone: "ok" | "warn" | "error" };

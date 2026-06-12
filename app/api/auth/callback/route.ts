@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { exchangeCode, userinfo, type UserInfo } from "@/lib/fga";
 import { consumeOAuthFlow, createSession } from "@/lib/session";
 
+export const runtime = "edge";
+
 // OAuth callback: verify state, exchange the code, check membership, open a session.
 export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin;

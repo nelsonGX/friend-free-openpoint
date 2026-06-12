@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import ApplyForm from "./ApplyForm";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export default async function ApplyPage() {

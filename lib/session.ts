@@ -1,11 +1,15 @@
 // Signed (HMAC-SHA256) cookie sessions + PKCE/state helpers. Server-side only.
-import crypto from "node:crypto";
+// Uses Web Crypto (crypto.subtle / getRandomValues) so the routes run on the
+// Edge Runtime — node:crypto and Buffer are unavailable there.
 import { cookies } from "next/headers";
 import { env, isAdminDiscordId } from "@/lib/env";
 
 const SESSION_COOKIE = "op_session";
 const OAUTH_COOKIE = "op_oauth";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
 export interface SessionUser {
   sub: string;
@@ -16,42 +20,70 @@ export interface SessionUser {
   allowed: boolean;
 }
 
+// --- base64url (binary-safe, no Buffer) ----------------------------------
+
+function bytesToB64url(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function b64urlToBytes(s: string): Uint8Array {
+  const b64 = s.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+  const bin = atob(padded);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
 // --- signing -------------------------------------------------------------
 
-function b64url(buf: Buffer): string {
-  return buf.toString("base64url");
+let hmacKeyPromise: Promise<CryptoKey> | null = null;
+function hmacKey(): Promise<CryptoKey> {
+  if (!hmacKeyPromise) {
+    hmacKeyPromise = crypto.subtle.importKey(
+      "raw",
+      encoder.encode(env.sessionSecret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+  }
+  return hmacKeyPromise;
 }
 
-function sign(payload: string): string {
-  return b64url(
-    crypto.createHmac("sha256", env.sessionSecret).update(payload).digest(),
-  );
+async function sign(payload: string): Promise<string> {
+  const sig = await crypto.subtle.sign("HMAC", await hmacKey(), encoder.encode(payload));
+  return bytesToB64url(new Uint8Array(sig));
 }
 
-// timing-safe equality
+// timing-safe equality (constant-time over equal-length byte arrays)
 function safeEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a);
-  const bb = Buffer.from(b);
+  const ab = encoder.encode(a);
+  const bb = encoder.encode(b);
   if (ab.length !== bb.length) return false;
-  return crypto.timingSafeEqual(ab, bb);
+  let diff = 0;
+  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
+  return diff === 0;
 }
 
 // `<base64url(json)>.<sig>` with an embedded expiry.
-function seal(data: object, ttlSeconds: number): string {
+async function seal(data: object, ttlSeconds: number): Promise<string> {
   const body = { ...data, exp: Math.floor(Date.now() / 1000) + ttlSeconds };
-  const payload = b64url(Buffer.from(JSON.stringify(body)));
-  return `${payload}.${sign(payload)}`;
+  const payload = bytesToB64url(encoder.encode(JSON.stringify(body)));
+  return `${payload}.${await sign(payload)}`;
 }
 
-function unseal<T>(token: string | undefined): T | null {
+async function unseal<T>(token: string | undefined): Promise<T | null> {
   if (!token) return null;
   const dot = token.lastIndexOf(".");
   if (dot < 0) return null;
   const payload = token.slice(0, dot);
   const sig = token.slice(dot + 1);
-  if (!safeEqual(sig, sign(payload))) return null;
+  if (!safeEqual(sig, await sign(payload))) return null;
   try {
-    const obj = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    const obj = JSON.parse(decoder.decode(b64urlToBytes(payload)));
     if (typeof obj.exp === "number" && obj.exp < Math.floor(Date.now() / 1000)) {
       return null;
     }
@@ -67,7 +99,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 export async function createSession(user: SessionUser): Promise<void> {
   const store = await cookies();
-  store.set(SESSION_COOKIE, seal(user, SESSION_TTL_SECONDS), {
+  store.set(SESSION_COOKIE, await seal(user, SESSION_TTL_SECONDS), {
     httpOnly: true,
     secure: isProd,
     sameSite: "lax",
@@ -83,7 +115,7 @@ export async function destroySession(): Promise<void> {
 
 export async function getSession(): Promise<SessionUser | null> {
   const store = await cookies();
-  const user = unseal<SessionUser & { exp: number }>(store.get(SESSION_COOKIE)?.value);
+  const user = await unseal<SessionUser & { exp: number }>(store.get(SESSION_COOKIE)?.value);
   if (!user || !user.allowed) return null;
   return {
     sub: user.sub,
@@ -107,16 +139,17 @@ export interface OAuthFlowState {
   returnTo?: string;
 }
 
-export function generatePkce(): { verifier: string; challenge: string; state: string } {
-  const verifier = b64url(crypto.randomBytes(32));
-  const challenge = b64url(crypto.createHash("sha256").update(verifier).digest());
-  const state = b64url(crypto.randomBytes(16));
+export async function generatePkce(): Promise<{ verifier: string; challenge: string; state: string }> {
+  const verifier = bytesToB64url(crypto.getRandomValues(new Uint8Array(32)));
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(verifier));
+  const challenge = bytesToB64url(new Uint8Array(digest));
+  const state = bytesToB64url(crypto.getRandomValues(new Uint8Array(16)));
   return { verifier, challenge, state };
 }
 
 export async function setOAuthFlow(flow: OAuthFlowState): Promise<void> {
   const store = await cookies();
-  store.set(OAUTH_COOKIE, seal(flow, 600), {
+  store.set(OAUTH_COOKIE, await seal(flow, 600), {
     httpOnly: true,
     secure: isProd,
     sameSite: "lax",
@@ -127,7 +160,7 @@ export async function setOAuthFlow(flow: OAuthFlowState): Promise<void> {
 
 export async function consumeOAuthFlow(): Promise<OAuthFlowState | null> {
   const store = await cookies();
-  const flow = unseal<OAuthFlowState & { exp: number }>(store.get(OAUTH_COOKIE)?.value);
+  const flow = await unseal<OAuthFlowState & { exp: number }>(store.get(OAUTH_COOKIE)?.value);
   store.delete(OAUTH_COOKIE);
   return flow;
 }

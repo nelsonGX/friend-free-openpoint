@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSession, sessionIsAdmin } from "@/lib/session";
 import { reversePay } from "@/lib/fga";
+
+export const runtime = "edge";
 import { getRequest, saveRequest } from "@/lib/store";
 
 // Admin rejects a request. If the friend already paid, refund their credits via

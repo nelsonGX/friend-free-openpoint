@@ -3,6 +3,8 @@ import { getSession } from "@/lib/session";
 import { createPayIntent } from "@/lib/fga";
 import { newId, saveRequest, type OpenPointRequest } from "@/lib/store";
 
+export const runtime = "edge";
+
 const PHONE_RE = /^09\d{8}$/; // Taiwan mobile number (OpenPoint account)
 const MAX_AMOUNT = 50000;
 

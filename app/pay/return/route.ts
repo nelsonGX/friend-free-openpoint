@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSession } from "@/lib/session";
 import { verifyPay } from "@/lib/fga";
+
+export const runtime = "edge";
 import { getRequest, saveRequest } from "@/lib/store";
 
 // Payment return URL. The payment page redirects the browser here (GET) with
