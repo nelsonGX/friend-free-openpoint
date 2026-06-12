@@ -1,10 +1,37 @@
-import Link from "next/link";
-import { getSession, sessionIsAdmin } from "@/lib/session";
+"use client";
 
-export default async function Header() {
-  const user = await getSession();
-  const isAdmin = sessionIsAdmin(user);
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+interface SessionUser {
+  username: string;
+  globalName: string | null;
+  isAdmin: boolean;
+}
+
+export default function Header() {
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const name = user?.globalName || user?.username || "";
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/session", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active) return;
+        setUser(data?.user ?? null);
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <header className="glass sticky top-0 z-50 border-b border-white/10">
@@ -24,7 +51,7 @@ export default async function Header() {
         </Link>
 
         <nav className="flex items-center gap-2 text-sm">
-          {user ? (
+          {loaded && user ? (
             <>
               <Link href="/apply" className="rounded-full px-3 py-1.5 hover:bg-white/10">
                 申請
@@ -32,7 +59,7 @@ export default async function Header() {
               <Link href="/status" className="rounded-full px-3 py-1.5 hover:bg-white/10">
                 我的申請
               </Link>
-              {isAdmin && (
+              {user.isAdmin && (
                 <Link
                   href="/admin"
                   className="rounded-full px-3 py-1.5 text-amber-300 hover:bg-white/10"
@@ -50,13 +77,15 @@ export default async function Header() {
                 </button>
               </form>
             </>
-          ) : (
-            <a
+          ) : loaded ? (
+            <Link
               href="/api/auth/login"
               className="rounded-full bg-[#5865F2] px-4 py-1.5 font-medium text-white shadow-[0_6px_18px_-8px_rgba(88,101,242,0.9)] transition-colors hover:bg-[#4752c4]"
             >
               使用 Discord 登入
-            </a>
+            </Link>
+          ) : (
+            <span className="h-8 w-24 rounded-full border border-white/10 bg-white/[0.03]" />
           )}
         </nav>
       </div>

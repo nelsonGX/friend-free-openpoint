@@ -1,16 +1,6 @@
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
 import ApplyForm from "./ApplyForm";
 
-export const runtime = "edge";
-export const dynamic = "force-dynamic";
-
-export default async function ApplyPage() {
-  const user = await getSession();
-  if (!user) {
-    redirect("/api/auth/login?returnTo=/apply");
-  }
-
+export default function ApplyPage() {
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-12">
       <div className="animate-fade-up">

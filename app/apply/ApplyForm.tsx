@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PRESET_AMOUNTS } from "@/lib/status";
 
 export default function ApplyForm() {
@@ -12,6 +12,22 @@ export default function ApplyForm() {
 
   const phoneValid = /^09\d{8}$/.test(phone);
   const amountValid = typeof amount === "number" && Number.isInteger(amount) && amount >= 1 && amount <= 50000;
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/session", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (active && !data?.user) {
+          window.location.href = "/api/auth/login?returnTo=/apply";
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

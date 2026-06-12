@@ -1,9 +1,5 @@
 import Link from "next/link";
 
-// Custom 404. Declares the edge runtime so the Cloudflare Pages (next-on-pages)
-// build treats /_not-found as an Edge route like every other dynamic route.
-export const runtime = "edge";
-
 export default function NotFound() {
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-6 px-6 py-16">
