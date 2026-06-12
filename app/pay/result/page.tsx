@@ -73,22 +73,31 @@ export default async function PayResultPage({
         ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
         : "border-red-500/40 bg-red-500/10 text-red-300";
 
+  const icon = tone === "ok" ? "✓" : tone === "warn" ? "!" : "✕";
+
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-6 px-6 py-16">
-      <div className={`rounded-2xl border p-6 ${toneClass}`}>
-        <h1 className="text-xl font-semibold">{title}</h1>
-        <p className="mt-2 text-sm leading-6 opacity-90">{message}</p>
+      <div className={`animate-fade-up rounded-2xl border p-6 backdrop-blur-sm ${toneClass}`}>
+        <div className="flex items-start gap-4">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-current/30 bg-current/10 text-lg font-bold">
+            {icon}
+          </span>
+          <div>
+            <h1 className="text-xl font-semibold">{title}</h1>
+            <p className="mt-2 text-sm leading-6 opacity-90">{message}</p>
+          </div>
+        </div>
       </div>
-      <div className="flex gap-3">
+      <div className="animate-fade-up flex gap-3 [animation-delay:80ms]">
         <Link
           href="/status"
-          className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black hover:bg-zinc-200"
+          className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black transition-all hover:-translate-y-0.5 hover:bg-zinc-200"
         >
           我的申請
         </Link>
         <Link
           href="/apply"
-          className="rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium hover:bg-white/10"
+          className="rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium transition-colors hover:border-white/35 hover:bg-white/10"
         >
           再次申請
         </Link>

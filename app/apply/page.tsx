@@ -12,13 +12,15 @@ export default async function ApplyPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-12">
-      <div>
+      <div className="animate-fade-up">
         <h1 className="text-2xl font-semibold tracking-tight">申請 OpenPoint 代轉</h1>
         <p className="mt-2 text-sm leading-6 text-zinc-400">
           填寫要收 OpenPoint 的手機號碼與點數，付款後等待核准。1 點 = 1 元 = 1 OpenPoint。
         </p>
       </div>
-      <ApplyForm />
+      <div className="card animate-fade-up rounded-2xl p-6 [animation-delay:80ms]">
+        <ApplyForm />
+      </div>
     </main>
   );
 }

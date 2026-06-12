@@ -53,7 +53,7 @@ export default function ApplyForm() {
           placeholder="0912345678"
           value={phone}
           onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-          className="rounded-xl border border-white/15 bg-white/[0.03] px-4 py-3 text-lg tracking-wide outline-none focus:border-amber-400/60"
+          className="rounded-xl border border-white/15 bg-white/[0.03] px-4 py-3 text-lg tracking-wide outline-none transition-colors focus:border-amber-400/70 focus:bg-white/[0.05] focus:ring-2 focus:ring-amber-400/20"
         />
       </div>
 
@@ -70,10 +70,10 @@ export default function ApplyForm() {
                   setCustom(false);
                   setAmount(v);
                 }}
-                className={`rounded-xl border px-3 py-3 text-center font-medium transition-colors ${
+                className={`rounded-xl border px-3 py-3 text-center font-medium transition-all ${
                   active
-                    ? "border-amber-400 bg-amber-400/15 text-amber-200"
-                    : "border-white/15 hover:bg-white/5"
+                    ? "border-amber-400 bg-amber-400/15 text-amber-200 shadow-[0_0_0_1px_rgba(251,191,36,0.3),0_8px_20px_-12px_rgba(245,158,11,0.6)]"
+                    : "border-white/15 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/5"
                 }`}
               >
                 {v}
@@ -100,13 +100,13 @@ export default function ApplyForm() {
               const n = Number.parseInt(e.target.value.replace(/\D/g, ""), 10);
               setAmount(Number.isNaN(n) ? "" : n);
             }}
-            className="rounded-xl border border-white/15 bg-white/[0.03] px-4 py-3 text-lg outline-none focus:border-amber-400/60"
+            className="rounded-xl border border-white/15 bg-white/[0.03] px-4 py-3 text-lg outline-none transition-colors focus:border-amber-400/70 focus:bg-white/[0.05] focus:ring-2 focus:ring-amber-400/20"
           />
         )}
       </div>
 
       {error && (
-        <p className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+        <p className="animate-fade-in rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           {error}
         </p>
       )}
@@ -114,8 +114,11 @@ export default function ApplyForm() {
       <button
         type="submit"
         disabled={submitting || !phoneValid || !amountValid}
-        className="rounded-full bg-amber-400 px-6 py-3 font-medium text-black transition-colors hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
+        className="btn-amber flex items-center justify-center gap-2 rounded-full px-6 py-3 font-medium disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
       >
+        {submitting && (
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black/80" />
+        )}
         {submitting
           ? "前往付款…"
           : `付款 ${amountValid ? amount : ""} 點並送出申請`}

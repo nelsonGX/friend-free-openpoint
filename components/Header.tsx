@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getSession, sessionIsAdmin } from "@/lib/session";
 
 export default async function Header() {
@@ -7,13 +8,21 @@ export default async function Header() {
   const name = user?.globalName || user?.username || "";
 
   return (
-    <header className="border-b border-white/10">
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-400 text-sm font-bold text-black">
-            P
-          </span>
-          OpenPoint 代轉
+    <header className="glass sticky top-0 z-50 border-b border-white/10">
+      <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-6 py-3.5">
+        <Link
+          href="/"
+          className="group flex items-center gap-2.5 font-semibold tracking-tight"
+        >
+          <Image
+            src="/assets/openpoint_free.webp"
+            alt="OpenPoint 代轉"
+            width={32}
+            height={32}
+            priority
+            className="h-8 w-8 rounded-xl object-cover shadow-[0_4px_14px_-4px_rgba(245,158,11,0.7)] ring-1 ring-white/10 transition-transform group-hover:scale-105"
+          />
+          <span className="transition-colors group-hover:text-amber-200">OpenPoint 代轉</span>
         </Link>
 
         <nav className="flex items-center gap-2 text-sm">
@@ -46,7 +55,7 @@ export default async function Header() {
           ) : (
             <a
               href="/api/auth/login"
-              className="rounded-full bg-[#5865F2] px-4 py-1.5 font-medium text-white hover:bg-[#4752c4]"
+              className="rounded-full bg-[#5865F2] px-4 py-1.5 font-medium text-white shadow-[0_6px_18px_-8px_rgba(88,101,242,0.9)] transition-colors hover:bg-[#4752c4]"
             >
               使用 Discord 登入
             </a>
